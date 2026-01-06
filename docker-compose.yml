@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  dashboard:
+    build: .
+    container_name: naver-trend-dashboard
+    ports:
+      - "8501:8501"
+    environment:
+      - NAVER_CLIENT_ID=${NAVER_CLIENT_ID}
+      - NAVER_CLIENT_SECRET=${NAVER_CLIENT_SECRET}
+      - SEARCH_AD_ACCESS_KEY=${SEARCH_AD_ACCESS_KEY}
+      - SEARCH_AD_SECRET_KEY=${SEARCH_AD_SECRET_KEY}
+      - SEARCH_AD_CUSTOMER_ID=${SEARCH_AD_CUSTOMER_ID}
+    volumes:
+      - ./favorites.json:/app/favorites.json
+    restart: unless-stopped
