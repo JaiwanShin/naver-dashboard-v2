@@ -478,16 +478,21 @@ def reorder_columns(df: pd.DataFrame) -> pd.DataFrame:
     모든 표에서 컬럼 순서 고정:
     - 앞: query, product_name, brand, maker, price, page_rank, seller, mall_name
     - 중: category1~3
-    - 끝: link, image_url
+    - 끝: link
+    - 제외: hprice, size_count, excluded_reason, bound_lower, bound_upper, deviation_pct, image_url, outlier_flag
     """
     if df.empty:
         return df
     
+    # 표시하지 않을 컬럼
+    exclude_cols = ['hprice', 'size_count', 'excluded_reason', 'bound_lower', 'bound_upper', 
+                    'deviation_pct', 'image_url', 'outlier_flag', 'product_id']
+    
     priority_front = ['query', 'product_name', 'brand', 'maker', 'price', 'page_rank', 'seller', 'mall_name']
     priority_middle = ['category1', 'category2', 'category3']
-    priority_end = ['link', 'image_url']
+    priority_end = ['link']
     
-    existing = df.columns.tolist()
+    existing = [col for col in df.columns.tolist() if col not in exclude_cols]
     ordered = []
     
     # 앞쪽 컬럼
@@ -508,20 +513,18 @@ def reorder_columns(df: pd.DataFrame) -> pd.DataFrame:
             existing.remove(col)
     ordered.extend(existing)  # 남은 컬럼
     
-    # 끝 컬럼 (link, image_url)
+    # 끝 컬럼 (link만)
     for col in priority_end:
-        if col in df.columns:
+        if col in df.columns and col not in exclude_cols:
             ordered.append(col)
     
     return df[ordered]
 
 def get_table_column_config(df: pd.DataFrame) -> dict:
-    """link는 클릭 가능, image_url은 썸네일로 표시"""
+    """link는 클릭 가능"""
     config = {}
     if 'link' in df.columns:
         config['link'] = st.column_config.LinkColumn("링크", display_text="🔗")
-    if 'image_url' in df.columns:
-        config['image_url'] = st.column_config.ImageColumn("이미지", width="small")
     return config
 
 @st.cache_data
