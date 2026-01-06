@@ -467,6 +467,7 @@ aux_pct = st.sidebar.number_input(
 outlier_method = st.sidebar.radio(
     "허용범위 방식",
     options=["iqr", "quantile"],
+    index=1,  # 기본값: Quantile Cap (Q3)
     format_func=lambda x: {"iqr": "IQR (기존)", "quantile": "Quantile Cap (Q3)"}[x],
     help="Q3 = quantile(0.75), 75% 분위수를 상한으로 사용"
 )
