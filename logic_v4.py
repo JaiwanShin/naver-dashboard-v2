@@ -566,26 +566,13 @@ def detect_outliers_quantile(
         stats_list = [stats]
         stats_df = pd.DataFrame(stats_list)
     else:
-        # 그룹별 통계 계산
-        stats_dict = {}
-        for name, group in df.groupby(valid_group_cols, dropna=False):
-            key = name if isinstance(name, tuple) else (name,)
-            stats_dict[key] = compute_stats(group)
-        
-        # 각 행에 통계 정보 매핑
-        def get_group_key(row):
-            return tuple(row[col] for col in valid_group_cols)
-        
-        df['bound_lower'] = df.apply(lambda row: stats_dict.get(get_group_key(row), {}).get('lower', 0), axis=1)
-        df['bound_upper'] = df.apply(lambda row: stats_dict.get(get_group_key(row), {}).get('upper', float('inf')), axis=1)
-        df['_median'] = df.apply(lambda row: stats_dict.get(get_group_key(row), {}).get('median', 0), axis=1)
-        
-        # stats_df 생성
-        stats_list = []
-        for key, stats in stats_dict.items():
-            row = dict(zip(valid_group_cols, key))
-            row.update(stats)
-            stats_list.append(row)
+        # 전체 데이터에 대해 통계 계산 (그룹별 대신 전체로 계산)
+        # query가 None인 경우가 많아서 전체 기준으로 계산
+        stats = compute_stats(df)
+        df['bound_lower'] = stats['lower']
+        df['bound_upper'] = stats['upper']
+        df['_median'] = stats['median']
+        stats_list = [stats]
         stats_df = pd.DataFrame(stats_list)
     
     # deviation_pct 계산
@@ -595,8 +582,11 @@ def detect_outliers_quantile(
         0.0
     )
     
-    # outlier_flag 계산 (Quantile 기준)
-    df['outlier_flag'] = (df['price'] < df['bound_lower']) | (df['price'] > df['bound_upper'])
+    # outlier_flag 계산 (직접 bound 컬럼과 비교)
+    lower_bound = df['bound_lower'].iloc[0] if len(df) > 0 else 0
+    upper_bound = df['bound_upper'].iloc[0] if len(df) > 0 else float('inf')
+    
+    df['outlier_flag'] = (df['price'] < lower_bound) | (df['price'] > upper_bound)
     
     # 보조 규칙 적용
     if use_aux:
@@ -606,18 +596,19 @@ def detect_outliers_quantile(
     # 임시 컬럼 제거 (_median만)
     df_before_outlier = df.drop(columns=['_median'])
     
-    # outlier_count 추가
-    if valid_group_cols:
-        outlier_counts = df_before_outlier[df_before_outlier['outlier_flag']].groupby(
-            valid_group_cols, dropna=False
-        ).size().reset_index(name='outlier_count')
-        stats_df = stats_df.merge(outlier_counts, on=valid_group_cols, how='left')
-        stats_df['outlier_count'] = stats_df['outlier_count'].fillna(0).astype(int)
-    else:
-        stats_df['outlier_count'] = int(df_before_outlier['outlier_flag'].sum())
+    # outlier_count 계산
+    stats_df['outlier_count'] = int(df_before_outlier['outlier_flag'].sum())
     
-    # 결과 분리
-    df_inliers = df_before_outlier[~df_before_outlier['outlier_flag']].copy()
+    # 결과 분리 - 직접 가격 범위로 필터링
+    df_inliers = df_before_outlier[
+        (df_before_outlier['price'] >= lower_bound) & 
+        (df_before_outlier['price'] <= upper_bound)
+    ].copy()
+    
+    # 보조 규칙 적용된 경우 추가 필터링
+    if use_aux:
+        df_inliers = df_inliers[np.abs(df_inliers['deviation_pct']) < aux_pct].copy()
+    
     df_outliers = df_before_outlier[df_before_outlier['outlier_flag']].copy()
     
     return df_before_outlier, df_inliers, df_outliers, stats_df
