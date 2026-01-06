@@ -1172,7 +1172,9 @@ with tab3:
                         st.success(f"✅ **검증 통과**: 최대가({actual_max:,.0f}원) ≤ 상한({upper_val:,.0f}원)")
             
             if not df_inliers.empty:
-                display_df = reorder_columns(df_inliers)
+                # 가격 오름차순 정렬
+                df_sorted = df_inliers.sort_values('price', ascending=True)
+                display_df = reorder_columns(df_sorted)
                 st.dataframe(display_df, use_container_width=True, column_config=get_table_column_config(display_df))
             else:
                 st.warning("정상 데이터가 없습니다.")
@@ -1180,11 +1182,9 @@ with tab3:
         # ===== Expander 2: 이상치 목록 =====
         with st.expander("⚠️ 이상치 목록 (가격 이상)"):
             if not df_outliers.empty:
-                st.caption(f"deviation_pct 절대값 기준 상위 100개 표시 (전체 {len(df_outliers)}개)")
-                # abs(deviation_pct) 큰 순 정렬, Top 100
-                df_outliers_sorted = df_outliers.copy()
-                if 'deviation_pct' in df_outliers_sorted.columns:
-                    df_outliers_sorted = df_outliers_sorted.sort_values('deviation_pct', key=abs, ascending=False).head(100)
+                st.caption(f"가격 오름차순 정렬 (전체 {len(df_outliers)}개)")
+                # 가격 오름차순 정렬
+                df_outliers_sorted = df_outliers.sort_values('price', ascending=True)
                 display_df = reorder_columns(df_outliers_sorted)
                 st.dataframe(display_df, use_container_width=True, column_config=get_table_column_config(display_df))
             else:
@@ -1201,8 +1201,10 @@ with tab3:
         # ===== Expander 4: 필터링으로 제외된 데이터 =====
         with st.expander("❌ 필터링으로 제외된 데이터"):
             if not df_excluded.empty:
-                st.caption(f"총 {len(df_excluded)}개 상품 제외됨 (excluded_reason 컬럼 확인)")
-                display_df = reorder_columns(df_excluded)
+                st.caption(f"가격 오름차순 정렬 (총 {len(df_excluded)}개 상품 제외됨, excluded_reason 컬럼 확인)")
+                # 가격 오름차순 정렬
+                df_excluded_sorted = df_excluded.sort_values('price', ascending=True)
+                display_df = reorder_columns(df_excluded_sorted)
                 st.dataframe(display_df, use_container_width=True, column_config=get_table_column_config(display_df))
             else:
                 st.info("제외된 데이터가 없습니다.")
