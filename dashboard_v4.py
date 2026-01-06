@@ -1268,8 +1268,23 @@ with tab3:
                     brand_counts = df_inliers["brand"].value_counts().head(10)
                     brand_counts = brand_counts[brand_counts.index != ""]
                     if not brand_counts.empty:
-                        fig = px.pie(values=brand_counts.values, names=brand_counts.index, title="브랜드 점유율 (Top 10, 정상 데이터)", template="plotly_dark", hole=0.4)
-                        fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font_family="Pretendard")
+                        fig = px.pie(values=brand_counts.values, names=brand_counts.index, title="브랜드 점유율 (Top 10)", template="plotly_dark", hole=0.4)
+                        fig.update_layout(
+                            paper_bgcolor='rgba(0,0,0,0)', 
+                            plot_bgcolor='rgba(0,0,0,0)', 
+                            font_family="Pretendard",
+                            legend=dict(
+                                orientation="h",
+                                yanchor="top",
+                                y=-0.1,
+                                xanchor="center",
+                                x=0.5,
+                                font=dict(size=11)
+                            ),
+                            margin=dict(l=20, r=20, t=40, b=80),
+                            height=450
+                        )
+                        fig.update_traces(textposition='inside', textinfo='percent')
                         st.plotly_chart(fig, use_container_width=True)
             with col2:
                 if 'mall_name' in df_inliers.columns:
