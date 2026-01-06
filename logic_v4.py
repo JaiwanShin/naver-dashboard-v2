@@ -544,9 +544,9 @@ def detect_outliers_quantile(
         q1 = prices.quantile(0.25)
         upper_q_val = prices.quantile(upper_quantile)
         median = prices.median()
-        # lower는 Q1 유지 (기존 IQR lower와 동일 로직)
-        lower = q1
-        # upper는 Q2.5 (더 타이트한 상한)
+        # lower는 0 (저가 상품은 필터링하지 않음)
+        lower = 0
+        # upper는 Q3 (고가 이상치만 필터링)
         upper = upper_q_val
         return {
             'Q1': q1,
