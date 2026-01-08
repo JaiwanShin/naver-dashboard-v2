@@ -256,24 +256,10 @@ def filter_search_results(
     # excluded_reason 컬럼 초기화
     df['excluded_reason'] = ''
     
-    # 1. 포함 조건 체크: product_name에 "캄프" AND ("카밍패드" or "카밍 패드")
-    def check_include_condition(row) -> bool:
-        product_name = str(row.get('product_name', '')).lower()
-        brand = str(row.get('brand', '')).lower()
-        
-        # 브랜드가 캄프/calmf면 우선 통과
-        if brand in ['캄프', 'calmf']:
-            return True
-        
-        # product_name 조건
-        has_calmf = '캄프' in product_name
-        has_calming_pad = '카밍패드' in product_name or '카밍 패드' in product_name
-        
-        return has_calmf and has_calming_pad
-    
-    # 포함 조건 적용
-    include_mask = df.apply(check_include_condition, axis=1)
-    df.loc[~include_mask, 'excluded_reason'] = 'NOT_MATCHING_PRODUCT'
+    # 1. 포함 조건: 모든 상품 통과 (특정 상품 필터 제거)
+    #    - 이전: 캄프 카밍패드만 통과
+    #    - 현재: 모든 상품 통과 (제외 패턴만 적용)
+    include_mask = pd.Series([True] * len(df), index=df.index)
     
     # 2. 제외 조건 체크 (포함 조건 통과한 것 중에서)
     def check_exclude_patterns(product_name: str) -> str:
